@@ -224,6 +224,9 @@ data/sample/*.parquet
 # Local review workspace (Lab 4)
 .review/
 
+# Local MCP configuration (may reference tokens)
+.vscode/mcp.json
+
 # dbt anonymous user id
 .user.yml
 app.log

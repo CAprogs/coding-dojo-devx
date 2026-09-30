@@ -30,7 +30,8 @@ gets the fewest permissions possible, and it is read-only whenever you can manag
 ```
 
 The `/readonly` endpoint exposes read tools only. The token adds a second limit: even a write tool would be refused.
-Signing in with OAuth instead would grant the scopes of the app across every repository your account can access.
+Signing in with OAuth instead would grant broader scopes across the repositories your account can access; the `/readonly`
+endpoint would still limit the tools.
 
 ## Script
 

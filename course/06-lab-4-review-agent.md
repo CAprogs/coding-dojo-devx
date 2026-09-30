@@ -35,7 +35,8 @@ and leaves the decision to a human.
    git diff upstream/lab-2...review-<number> > .review/diff.patch
    ```
 
-   `.review/` is ignored by git.
+   `.review/` is ignored by git. **Do not check out or open the `review-<number>` branch**: it would load the other
+   pair's settings, `justfile` and hooks into your workspace. The diff file is all you need.
 
    If the other pair's pull request does not exist yet, review the reference solution instead:
 

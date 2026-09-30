@@ -38,7 +38,9 @@ Why regular expressions? A plain string key matches the **start** of a command: 
 approve `uv run just dbt-unit-anything`. The anchored form `/^...$/` approves exactly one command line.
 
 Discuss with your navigator: approving `just dbt-unit` approves **whatever the `dbt-unit` recipe runs**, and dbt runs
-whatever SQL the models contain. The allowlist is only as safe as the `justfile` and the models.
+whatever SQL the models contain. The allowlist is only as safe as the `justfile` and the models:
+approving `just X` means approving any code the agent may have written that `X` runs. The `justfile` also loads a `.env`
+file if one exists, which could change the environment of every approved recipe.
 
 Recommended in your **user** settings (it is ignored in workspace settings): keep edits to the files your allowlisted
 commands execute under manual approval. The last matching pattern wins, so `"**/*": true` comes first.
@@ -53,7 +55,10 @@ If you already have this setting, add the lines instead of replacing it.
   "**/profiles.yml": false,
   "**/data/sample/*.py": false,
   "**/pyproject.toml": false,
-  "**/uv.lock": false
+  "**/uv.lock": false,
+  "**/.env*": false,
+  "**/macros/**": false,
+  "**/models/**/*.py": false
 }
 ```
 
