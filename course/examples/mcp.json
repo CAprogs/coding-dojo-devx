@@ -1,0 +1,15 @@
+{
+  "inputs": [
+    { "id": "github_pat", "type": "promptString", "description": "Read-only fine-grained token", "password": true }
+  ],
+  "servers": {
+    "github": {
+      "type": "http",
+      "url": "https://api.githubcopilot.com/mcp/readonly",
+      "headers": {
+        "Authorization": "Bearer ${input:github_pat}",
+        "X-MCP-Toolsets": "repos,pull_requests"
+      }
+    }
+  }
+}
