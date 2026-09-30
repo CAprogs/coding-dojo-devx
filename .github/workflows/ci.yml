@@ -1,0 +1,65 @@
+name: ci
+
+# Runs on pull requests from forks with a read-only token and no secrets.
+# Never switch this workflow to pull_request_target: it would run untrusted PR code with write access.
+on:
+  pull_request:
+    branches: [main, "lab-*"]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+
+jobs:
+  quality:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: astral-sh/setup-uv@c18668ad3cf93ea998bef934396af7bb5c839dc7 # v10.2.0
+      - run: uv sync --locked --all-groups
+      - run: uv run pre-commit run --all-files --show-diff-on-failure
+
+  dbt-ci:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: astral-sh/setup-uv@c18668ad3cf93ea998bef934396af7bb5c839dc7 # v10.2.0
+      - run: uv sync --locked --all-groups
+      - run: uv run just dbt-build-ci
+
+  lab-checks:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: astral-sh/setup-uv@c18668ad3cf93ea998bef934396af7bb5c839dc7 # v10.2.0
+      - run: uv sync --locked --all-groups
+      - run: uv run python course/checks/lab_check.py "$BASE_REF"
+        env:
+          BASE_REF: ${{ github.base_ref }}
+
+  # Informational: checks the PO acceptance criteria on the sample, wherever the fix is implemented.
+  acceptance:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    continue-on-error: true
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: astral-sh/setup-uv@c18668ad3cf93ea998bef934396af7bb5c839dc7 # v10.2.0
+      - run: uv sync --locked --all-groups
+      - run: uv run python course/checks/acceptance/run.py "$BASE_REF"
+        env:
+          BASE_REF: ${{ github.base_ref }}
