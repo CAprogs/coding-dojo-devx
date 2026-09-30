@@ -1,51 +1,41 @@
-"""Module for writing data to a Minio storage bucket."""
+"""Module for writing data to the local datalake directory."""
 
-from minio import Minio
-from minio.error import S3Error
 from logger.log_handler import log
-from datetime import datetime, timedelta
+from datetime import timedelta
 from typing import Literal
-from io import BytesIO
+from pathlib import Path
+import pendulum
 
 
-def today_date() -> str:
-    """Returns the current date in 'YYYY-MM-DD' format."""
-    return datetime.now().strftime("%Y-%m-%d")
+DATALAKE_ROOT = Path("datalake")
 
 
-def day_before_date() -> str:
-    """Returns the date of the previous day in 'YYYY-MM-DD' format."""
-    return (datetime.now() - timedelta(days=1)).strftime("%Y-%m-%d")
+def target_date() -> str:
+    """Returns the snapshot date in 'YYYY-MM-DD' format (Europe/Paris, previous day before 9am)."""
+    now = pendulum.now("Europe/Paris")
+    if now.hour < 9:
+        now = now - timedelta(days=1)
+    return now.strftime("%Y-%m-%d")
 
 
 def write_to_storage(
-    client: Minio, data: BytesIO, filetype: Literal["parquet", "json", "csv"] = "parquet"
+    data: bytes, filetype: Literal["parquet", "json", "csv"] = "parquet", root: Path = DATALAKE_ROOT
 ) -> bool | None:
-    """Writes data to a Minio bucket based on the current time and file type."""
+    """Writes data to `<root>/<filetype>/<date>_data.<filetype>`, skipping existing files."""
     try:
-        # Check if the bucket exists
-        if not client.bucket_exists(filetype):
-            log.error(f"Bucket '{filetype}' does not exist. Please check your Docker setup.")
-            return False
+        folder = root / filetype
+        folder.mkdir(parents=True, exist_ok=True)
+        path = folder / f"{target_date()}_data.{filetype}"
 
-        # Create a filename with the current date if it's 9am or later
-        if datetime.now().hour >= 9:
-            filename = f"{today_date()}_data.{filetype}"
-        else:
-            filename = f"{day_before_date()}_data.{filetype}"
-
-        # Check if the object already exists
-        objects = client.list_objects(bucket_name=filetype, prefix=filename)
-        if any(objects):
-            log.warning(f"Object '{filename}' already exists in bucket '{filetype}'.")
+        # Check if the file already exists
+        if path.exists():
+            log.warning(f"File '{path}' already exists.")
             return None
 
-        # Upload and save the object
-        # Here, 'data' is expected to be a bytes-like object
-        result = client.put_object(filetype, filename, data, length=-1, part_size=5 * 1024 * 1024)
+        path.write_bytes(data)
 
-        log.info(f"Created {result.object_name} object; etag: {result.etag}, version-id: {result.version_id}")
+        log.info(f"Created {path} ({len(data)} bytes)")
         return True
-    except S3Error as e:
-        log.error("An error occurred.", e)
+    except OSError as e:
+        log.error(f"An error occurred while writing to the datalake: {e}")
         return False
