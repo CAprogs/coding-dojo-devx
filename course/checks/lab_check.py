@@ -34,6 +34,8 @@ READ_ONLY_TOOLS = {
     "read/problems",
 }
 
+EXACT_RECIPE_RULE = re.compile(r"/\^(uv run )?just [a-z0-9-]+\$/")
+
 SECRET_PATTERNS = [
     re.compile(r"ghp_[A-Za-z0-9]{20,}"),
     re.compile(r"github_pat_[A-Za-z0-9_]{20,}"),
@@ -131,12 +133,13 @@ def lab_2(report: Report) -> None:
             for key, value in (allowlist or {}).items()
             if value is True or (isinstance(value, dict) and value.get("approve") is True)
         ]
-        too_broad = [
-            key for key in approved if "*" in key or ".*" in key or not re.fullmatch(r"/?\^?just [a-z0-9-]+\$?/?", key)
-        ]
+        # A plain string key matches the start of a command ("just dbt-unit" also approves "just dbt-unit-x"),
+        # so only anchored regular expressions of one exact recipe are accepted.
+        too_broad = [key for key in approved if not EXACT_RECIPE_RULE.fullmatch(key)]
         report.check(
             bool(approved) and not too_broad,
-            f"auto-approved commands are exact `just <recipe>` commands (too broad: {too_broad or 'none'})",
+            f"auto-approved commands are anchored regexes of exact recipes, like /^uv run just dbt-unit$/ "
+            f"(too broad: {too_broad or 'none'})",
         )
     report.check(unit_test_count() >= 1, "at least one dbt unit test is declared under models/")
 

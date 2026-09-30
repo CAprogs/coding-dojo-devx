@@ -4,7 +4,7 @@ name: ci
 # Never switch this workflow to pull_request_target: it would run untrusted PR code with write access.
 on:
   pull_request:
-    branches: [main, "lab-*"]
+    branches: [main, "lab-*", warmup]
 
 permissions:
   contents: read
