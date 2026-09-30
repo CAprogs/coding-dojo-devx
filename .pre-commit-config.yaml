@@ -34,8 +34,8 @@ repos:
   rev: 3.4.2
   hooks:
     - id: sqlfluff-lint # returns linting errors.
-      additional_dependencies: ['dbt-core>=1.10.2', 'dbt-duckdb>=1.9.4', 'sqlfluff-templater-dbt>=3.4.1', 'fsspec[s3]>=2025.5.1']
+      additional_dependencies: ['dbt-core>=1.12.5,<2', 'dbt-duckdb>=1.11.0,<2', 'sqlfluff-templater-dbt==3.4.2']
       args: [--config, .sqlfluff, src/transformation/dbt_paris_event_analyzer/, --disregard-sqlfluffignores]
     - id: sqlfluff-fix # attempts to fix rule violations.
       args: [--config, .sqlfluff, --show-lint-violations,  src/transformation/dbt_paris_event_analyzer/, --disregard-sqlfluffignores]
-      additional_dependencies: ['dbt-core>=1.10.2', 'dbt-duckdb>=1.9.4', 'sqlfluff-templater-dbt>=3.4.1', 'fsspec[s3]>=2025.5.1']
+      additional_dependencies: ['dbt-core>=1.12.5,<2', 'dbt-duckdb>=1.11.0,<2', 'sqlfluff-templater-dbt==3.4.2']
