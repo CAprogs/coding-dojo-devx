@@ -13,7 +13,7 @@ SELECT
     a.prochains_creneaux,
     a.nb_next_occurrences,
     a.next_start_date,
-    a.has_event_today,
+    coalesce(a.has_event_today, current_date BETWEEN fr.date_start::DATE AND fr.date_end::DATE) AS has_event_today,
     fr.date_description,
     fr.cover_url,
     fr.cover_credit,
