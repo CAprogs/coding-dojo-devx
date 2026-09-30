@@ -25,7 +25,7 @@ SELECT
     cover_credit,
     address_name,
     address_zipcode,
-    CASE WHEN address_is_indicated THEN concat(address_street, ' ', address_zipcode) ELSE NULL END AS full_address,
+    CASE WHEN nullif(trim(address_street), '') IS NOT NULL AND nullif(trim(address_zipcode), '') IS NOT NULL THEN concat_ws(' ', trim(address_street), trim(address_zipcode)) END AS full_address,
     CASE WHEN full_address IS NOT NULL THEN lat ELSE NULL END AS latitude,
     CASE WHEN full_address IS NOT NULL THEN lon ELSE NULL END AS longitude,
     CASE WHEN pmr IS NULL THEN 0 ELSE pmr::INT END AS pmr_friendly,
