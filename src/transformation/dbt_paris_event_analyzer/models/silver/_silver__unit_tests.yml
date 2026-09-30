@@ -15,3 +15,23 @@ unit_tests:
         - {id: zipcode_only, full_address: null, latitude: null, longitude: null}
         - {id: blank_street, full_address: null, latitude: null, longitude: null}
         - {id: name_only, full_address: null, latitude: null, longitude: null}
+
+  - name: dn3_ongoing_events_without_occurrences_happen_today
+    description: "DN-3: an event with no detailed occurrences happens today if today is within its date range."
+    model: agenda_enriched
+    given:
+      - input: ref('filtered_rows')
+        rows:
+          - {id: ongoing_expo, date_start: "2000-01-01 00:00:00+00", date_end: "2099-12-31 00:00:00+00"}
+          - {id: future_expo, date_start: "2098-01-01 00:00:00+00", date_end: "2099-12-31 00:00:00+00"}
+          - {id: past_expo, date_start: "2000-01-01 00:00:00+00", date_end: "2000-12-31 00:00:00+00"}
+          - {id: scheduled, date_start: "2000-01-01 00:00:00+00", date_end: "2099-12-31 00:00:00+00"}
+      - input: ref('agenda')
+        rows:
+          - {id: scheduled, has_event_today: false}
+    expect:
+      rows:
+        - {id: ongoing_expo, has_event_today: true}
+        - {id: future_expo, has_event_today: false}
+        - {id: past_expo, has_event_today: false}
+        - {id: scheduled, has_event_today: false}
