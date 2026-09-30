@@ -1,5 +1,4 @@
-{% macro get_today_file(bucket) %}
-    {% set prefix = 's3://' %}
+{% macro get_today_file(filetype) %}
     {% set tz = modules.pytz.timezone('Europe/Paris') %}
     {% set run_dt = run_started_at.astimezone(tz) %}
 
@@ -10,6 +9,6 @@
     {% endif %}
 
     {% set date_str = target_dt.strftime('%Y-%m-%d') %}
-    {% set filepath = prefix ~ bucket ~ '/' ~ date_str ~ '_data.' ~ bucket %}
+    {% set filepath = 'datalake/' ~ filetype ~ '/' ~ date_str ~ '_data.' ~ filetype %}
     {{ return(filepath) }}
 {% endmacro %}

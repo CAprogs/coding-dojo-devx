@@ -217,3 +217,13 @@ warehouse/*.duckdb
 target/
 dbt_packages/
 logs/
+
+# Generated offline sample (see `just sample`)
+data/sample/*.parquet
+
+# Local review workspace (Lab 4)
+.review/
+
+# dbt anonymous user id
+.user.yml
+app.log

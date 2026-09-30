@@ -44,7 +44,7 @@ profiles_dir = src/transformation/dbt_paris_event_analyzer/profiles/
 # Nom du profil à utiliser (défini dans profiles.yml).
 profile = dbt_paris_event_analyzer
 # Cible de déploiement à utiliser (ex: dev, prod).
-target = prod
+target = lint
 # Nettoie les fichiers temporaires après l'analyse.
 clean_up_temp_files = true
 
