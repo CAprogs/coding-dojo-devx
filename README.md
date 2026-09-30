@@ -1,170 +1,152 @@
-
 <div align="center">
 
 # PARIS EVENTS ANALYZER
 
-![GitHub](https://img.shields.io/github/license/CAprogs/paris-events-analyzer)
+![GitHub](https://img.shields.io/github/license/CAprogs/coding-dojo-devx)
 
 </div>
 
+> [!NOTE]
+> This repository is the codebase of the **Coding Dojo DevX** course on agentic development with GitHub Copilot.
+> Start with [course/README.md](course/README.md).
+>
+> **DataNova** (logo and "Powered by DataNova" badge) is a **fictional** brand created for this training.
+> It does not refer to any real company.
 
-## À propos
+## About
 
-L'objectif principal de ce projet est de mettre en valeur les données ouvertes fournies par la ville de Paris pour analyser les événements culturels, sportifs et communautaires.
+This project showcases the open data published by the City of Paris to analyse cultural, sports and community events.
 
-Vous retrouverez davantage d'informations sur les données ici : [Que Faire à Paris](https://opendata.paris.fr/explore/dataset/que-faire-a-paris-/).
+More information about the dataset: [Que Faire à Paris](https://opendata.paris.fr/explore/dataset/que-faire-a-paris-/).
 
+### Architecture
 
-### Architecture du projet
+<img src="images/project-archi.png" alt="Project architecture" width="1200" height="120">
 
-<img src="images/project-archi.png" alt="archi" width="1200" height="120">
-
+> [!NOTE]
+> The diagram shows the original MinIO object store. Snapshots are now written to a local `datalake/` directory,
+> because MinIO community container images are no longer publicly available.
 
 <details>
-    <summary>En savoir plus</summary>
+    <summary>Why these tools?</summary>
 
-Pourquoi ce choix ?
-- **[Open Data Paris - API](https://opendata.paris.fr/pages/home/)** : Fournit des endpoints pour de nombreux jeux de données, notamment les événements de la ville de Paris.
-- **[request-cache](https://requests-cache.readthedocs.io/en/stable/)** : C'est la bibliothèque request mais avec un cache intégré, ce qui permet de réduire les appels API inutiles et de rapidement itérer sur les données.
-- **[MinIO x Docker](https://min.io/docs/minio/container/index.html)** : Self-hosted et scalable, MinIO est un `object storage` au même titre qu'Amazon S3, Google Cloud Storage ou Azure Blob Storage. Il permet de stocker les données de manière sécurisée et scalable. La seule différence est que, qui dit self-hosted dit gestion de la maintenance, des mises à jour et de la sécurité etc..
-- **[DBT](https://docs.getdbt.com/docs/introduction)** : Facilite la transformation des données avec une approche modulaire et testable.
-- **[DuckDB](https://duckdb.org/why_duckdb)** : Base de données légère et rapide, parfaite pour l'analyse de données.
-- **[Streamlit](https://docs.streamlit.io/)** : Permet de créer rapidement des applications web interactives pour visualiser les données.
+- **[Paris Open Data API](https://opendata.paris.fr/pages/home/)**: endpoints for many datasets, including city events.
+- **[requests-cache](https://requests-cache.readthedocs.io/en/stable/)**: `requests` with a built-in cache, to avoid redundant API calls while iterating on the data.
+- **Local datalake**: daily snapshots stored as `datalake/<format>/<YYYY-MM-DD>_data.<format>`.
+- **[dbt](https://docs.getdbt.com/docs/introduction)** (dbt Core 1.x): modular, testable SQL transformations.
+- **[DuckDB](https://duckdb.org/why_duckdb)**: a fast, embedded analytical database.
+- **[Streamlit](https://docs.streamlit.io/)**: quick interactive web apps to explore the data.
 </details>
 
+### About "Que Faire à Paris"
 
-### À propos de "QUE FAIRE À PARIS" 💡
----
+**Que Faire à Paris** is the participatory events calendar of the City of Paris. Events and activities in Paris and its region are published on [paris.fr/quefaire](https://www.paris.fr/quefaire).
 
-**QUE FAIRE À PARIS** est l’agenda participatif de la Ville de Paris. Tous les événements et activités de Paris et sa région sont publiés et mis en avant sur [ce site](https://www.paris.fr/quefaire).
+- The data covers venues such as the City's **libraries** and **museums**, **parks** and **gardens**, **community centres**, **swimming pools**, **theatres**, major venues (**Gaîté Lyrique**, **CENTQUATRE**, **Carreau du Temple**) and **concert halls**.
+- It is updated **daily**.
 
-👉 Les données recensées comprennent des informations sur les lieux parisiens tels que les **Bibliothèques** et **Musées** de la Ville, les **parcs** et **jardins**, les **centres d'animations**, les **piscines**, les **théâtres**, les **grands lieux** comme la **Gaîté Lyrique**, le **CENTQUATRE**, le **Carreau du Temple**, les **salles de concert**.
-
-👉 Elles sont mises à jour **quotidiennement**.
-
-
-### Description des données
+### Data model
 
 <details>
-    <summary> Data Model </summary>
+    <summary>Source columns</summary>
 
-| Feature | Description | Type | Exemple |
+Example values come from the French source data and are kept as is.
+
+| Column | Description | Type | Example |
 | :--- | :--- | :--- | :--- |
-| `id` | Identifiant unique de l'événement. | VARCHAR | `315268` |
-| `event_id` | Identifiant du modèle de l'événement (utilisé par Algolia). | INTEGER | `12345` |
-| `url` | URL de la page de l'événement sur le site Que Faire à Paris. | VARCHAR | `https://quefaire.paris.fr/fiche/315268-le-bel-ete-du-canal` |
-| `title` | Titre de l'événement. | VARCHAR | `Le Bel Été du Canal 2025` |
-| `lead_text` | Texte d'introduction ou chapô de l'événement. | VARCHAR | `Chaque été, le canal de l'Ourcq s'anime ! Profitez de nombreuses animations, concerts et activités nautiques.` |
-| `description` | Contenu détaillé de la fiche de l'événement, au format HTML. | VARCHAR | `<p>Rejoignez-nous pour la 18ème édition du Bel Été du Canal...</p>` |
-| `date_start` | Date et heure de début de l'événement. | TIMESTAMPTZ | `2025-07-05T10:00:00+02:00` |
-| `date_end` | Date et heure de fin de l'événement. | TIMESTAMPTZ | `2025-08-24T22:00:00+02:00` |
-| `occurrences` | Dates et heures des différentes occurrences de l'événement. | VARCHAR | `2025-09-12T02:00:00+02:00_2025-09-12T02:00:00+02:00` |
-| `date_description`| Description textuelle (HTML) des dates et horaires. | VARCHAR | `<p>Tous les samedis et dimanches du 5 juillet au 24 août 2025.</p>` |
-| `cover_url` | URL de l'image de couverture de l'événement. | VARCHAR | `https://cdn.paris.fr/qfapv4/2024/08/05/huge-a33455995aae764b4149f08f72b37712.jpg` |
-| `cover_alt` | Texte alternatif pour l'image de couverture. | VARCHAR | `Personnes faisant du kayak sur le canal de l'Ourcq` |
-| `cover_credit` | Crédits de l'image de couverture. | VARCHAR | `© Mairie de Paris` |
-| `locations` | Informations sur le lieu associé à l'événement. | VARCHAR | `[{"accessibility": {"blind": null, "pmr": 1, "deaf": null, "sign_language": null, "mental": null}, "address_street": ...}]` |
-| `address_name` | Nom du lieu principal de l'événement. | VARCHAR | `Bassin de la Villette` |
-| `address_street`| Adresse postale du lieu (numéro et rue). | VARCHAR | `Quai de la Loire` |
-| `address_zipcode`| Code postal du lieu. | VARCHAR | `75019` |
-| `address_city` | Ville du lieu. | VARCHAR | `Paris` |
-| `lat_lon` | Coordonnées géographiques de l'événement. | GEOMETRY | `\x00\x00\x00\x00\x00\x00\x00\x00\x00...` |
-| `pmr` | Indique si l'événement est accessible aux Personnes à Mobilité Réduite. | INTEGER | `1 / 0` |
-| `blind` | Indique si l'événement est accessible aux personnes malvoyantes. | INTEGER | `1 / 0` |
-| `deaf` | Indique si l'événement est accessible aux personnes malentendantes. | INTEGER | `1 / 0` |
-| `sign_language` | Indique si l'accès en langue des signes est disponible. | VARCHAR | `1 / 0` |
-| `mental` | Indique si l'accès est adapté pour les personnes en situation de handicap mental. | VARCHAR | `1 / 0` |
-| `transport` | Moyens de transport pour accéder au lieu. | VARCHAR | `Métro 5 -> Jaurès, RER E : Magenta` |
-| `contact_url` | URL du site web officiel ou de contact. | VARCHAR | `https://www.bel-ete-canal.fr` |
-| `contact_phone` | Numéro de téléphone de contact. | VARCHAR | `01 42 76 33 50` |
-| `contact_mail` | Adresse e-mail de contact. | VARCHAR | `contact@bel-ete-canal.fr` |
-| `contact_facebook`| URL de la page Facebook de l'événement. | VARCHAR | `https://facebook.com/bel.ete.canal` |
-| `contact_twitter`| URL du compte Twitter de l'événement. | VARCHAR | `https://twitter.com/bel_ete_canal` |
-| `price_type` | Type de tarification de l'événement. | VARCHAR | `gratuit / payant / gratuit sous condition` |
-| `price_detail` | Détails sur les tarifs. | VARCHAR | `<p>De 13 à 15 euros.</p>` |
-| `access_type` | Type d'accès (libre, sur réservation...). | VARCHAR | `libre / conseillee` |
-| `access_link` | URL pour la réservation ou l'achat de billets. | VARCHAR | `https://billetterie.bel-ete-canal.fr` |
-| `access_link_text`| Texte du lien de réservation. | VARCHAR | `Réservez votre place ici` |
-| `updated_at` | Date et heure de la dernière mise à jour de la fiche de l'événement. | TIMESTAMPTZ | `2025-06-12T15:00:00+02:00` |
-| `image_couverture`| Champ technique lié à l'image de couverture. | VARCHAR | `` |
-| `programs` | Programmes ou festivals auxquels l'événement est associé. | VARCHAR | `L'Été du Canal ; Paris Plages` |
-| `address_url` | Lien vers un événement en ligne. | VARCHAR | `https://zoom.us/j/123456789` |
-| `address_url_text`| Informations complémentaires sur le lien de l'événement en ligne. | VARCHAR | `Conférence en direct sur Zoom` |
-| `address_text` | Compléments d'information sur un lieu (ex: bâtiment, étage...). | VARCHAR | `Retransmis depuis l'Auditorium` |
-| `title_event` | Titre court ou libellé de l'événement. | VARCHAR | `Été du Canal` |
-| `audience` | Public cible de l'événement. | VARCHAR | `Tout public / Jeune public / Enfants ...` |
-| `childrens` | Indique si l'événement est adapté aux enfants. | VARCHAR | `Oui, à partir de 6 ans / Non` |
-| `group` | Indique si l'événement est adapté aux groupes. | VARCHAR | `Oui, sur réservation / Non` |
-| `locale` | Langue principale de l'événement. | VARCHAR | `fr / en` |
-| `rank` | Classement ou popularité de l'événement. | NUMBER | `932.5` |
-| `weight` | ... | INTEGER | `100` |
-| `qfap_tags` | Catégories ou mots-clés associés à l'événement. | VARCHAR | `Concert ;Festival ;Sport` |
-| `universe_tags` | Mots-clés d'univers thématique plus larges. | VARCHAR | `Musique ; Loisirs ; Famille` |
-| `event_indoor` | Indique si l'événement se déroule en intérieur (1) ou extérieur (0). | INTEGER | `0 / 1` |
-| `event_pets_allowed` | Indique si les animaux de compagnie sont autorisés. | INTEGER | `1 / 0` |
-| `contact_organisation_name`| Nom de l'organisation de contact. | VARCHAR | `Association des Canaux de Paris` |
-| `contact_url_text`| Texte associé à l'URL de contact. | VARCHAR | `Visitez notre site` |
-| `contact_vimeo` | URL de la page Vimeo associée. | VARCHAR | `https://vimeo.com/bel_ete_canal` |
-| `contact_deezer`| URL de la page Deezer associée. | VARCHAR | `https://deezer.com/playlist/12345` |
-| `contact_tiktok` | URL du compte TikTok associé. | VARCHAR | `https://tiktok.com/@bel_ete_canal` |
-| `contact_twitch`| URL de la chaîne Twitch associée. | VARCHAR | `https://twitch.tv/bel_ete_canal` |
-| `contact_spotify`| URL de la playlist Spotify associée. | VARCHAR | `https://spotify.com/playlist/abcde` |
-| `contact_youtube`| URL de la chaîne YouTube associée. | VARCHAR | `https://youtube.com/c/belelecanal` |
-| `contact_bandcamp`| URL de la page Bandcamp associée. | VARCHAR | `https://belelecanal.bandcamp.com` |
-| `contact_linkedin`| URL de la page LinkedIn associée. | VARCHAR | `https://linkedin.com/company/bel-ete-canal` |
-| `contact_snapchat`| URL du compte Snapchat associé. | VARCHAR | `https://snapchat.com/add/bel_ete_canal` |
-| `contact_whatsapp`| Lien ou numéro WhatsApp de contact. | VARCHAR | `https://wa.me/33123456789` |
-| `contact_instagram`| URL du compte Instagram associé. | VARCHAR | `https://instagram.com/bel_ete_canal` |
-| `contact_messenger`| Lien vers un contact Messenger. | VARCHAR | `https://m.me/bel.ete.canal` |
-| `contact_pinterest`| URL du compte Pinterest associé. | VARCHAR | `https://pinterest.com/bel_ete_canal` |
-| `contact_soundcloud`| URL de la page Soundcloud associée. | VARCHAR | `https://soundcloud.com/bel_ete_canal` |
+| `id` | Unique event identifier. | VARCHAR | `315268` |
+| `event_id` | Event template identifier (used by Algolia). | INTEGER | `12345` |
+| `url` | Event page on the Que Faire à Paris website. | VARCHAR | `https://quefaire.paris.fr/fiche/315268-le-bel-ete-du-canal` |
+| `title` | Event title. | VARCHAR | `Le Bel Été du Canal 2025` |
+| `lead_text` | Introduction text. | VARCHAR | `Chaque été, le canal de l'Ourcq s'anime !` |
+| `description` | Detailed description, as HTML. | VARCHAR | `<p>Rejoignez-nous pour la 18ème édition...</p>` |
+| `date_start` | Start date and time. | TIMESTAMPTZ | `2025-07-05T10:00:00+02:00` |
+| `date_end` | End date and time. | TIMESTAMPTZ | `2025-08-24T22:00:00+02:00` |
+| `occurrences` | Individual time slots, `<start>_<end>` separated by `;`. Empty for many ongoing events. | VARCHAR | `2025-09-12T20:00:00+02:00_2025-09-12T22:00:00+02:00` |
+| `date_description` | Text description (HTML) of dates and opening hours. | VARCHAR | `<p>Tous les samedis et dimanches...</p>` |
+| `cover_url` | Cover image URL. | VARCHAR | `https://cdn.paris.fr/qfapv4/...jpg` |
+| `cover_alt` | Alternative text of the cover image. | VARCHAR | `Personnes faisant du kayak...` |
+| `cover_credit` | Cover image credits. | VARCHAR | `© Mairie de Paris` |
+| `locations` | Venue information (JSON). | VARCHAR | `[{"accessibility": {...}, "address_street": ...}]` |
+| `address_name` | Main venue name. | VARCHAR | `Bassin de la Villette` |
+| `address_street` | Street address (number and street). | VARCHAR | `Quai de la Loire` |
+| `address_zipcode` | Postal code. | VARCHAR | `75019` |
+| `address_city` | City. | VARCHAR | `Paris` |
+| `lat_lon` | Geographic coordinates. | GEOMETRY | `POINT (2.37 48.88)` |
+| `pmr` | Accessible to people with reduced mobility. | INTEGER | `1 / 0` |
+| `blind` | Accessible to visually impaired people. | INTEGER | `1 / 0` |
+| `deaf` | Accessible to hearing impaired people. | INTEGER | `1 / 0` |
+| `sign_language` | Sign language available. | VARCHAR | `1 / 0` |
+| `mental` | Adapted for people with intellectual disabilities. | VARCHAR | `1 / 0` |
+| `transport` | Public transport to the venue. | VARCHAR | `Métro 5 -> Jaurès` |
+| `contact_url` | Official or contact website. | VARCHAR | `https://www.example.org` |
+| `contact_phone` | Contact phone number. | VARCHAR | `01 00 00 00 00` |
+| `contact_mail` | Contact email. | VARCHAR | `contact@example.org` |
+| `contact_facebook` | Facebook page. | VARCHAR | `https://facebook.com/...` |
+| `contact_twitter` | Twitter account. | VARCHAR | `https://twitter.com/...` |
+| `price_type` | Pricing type. | VARCHAR | `gratuit / payant / gratuit sous condition` |
+| `price_detail` | Price details (HTML). | VARCHAR | `<p>De 13 à 15 euros.</p>` |
+| `access_type` | Access type (free entry, booking...). | VARCHAR | `libre / conseillee` |
+| `access_link` | Booking or ticketing URL. | VARCHAR | `https://tickets.example.org` |
+| `access_link_text` | Text of the booking link. | VARCHAR | `Réservez votre place ici` |
+| `updated_at` | Last update of the event page. | TIMESTAMPTZ | `2025-06-12T15:00:00+02:00` |
+| `image_couverture` | Technical field related to the cover image. | VARCHAR | |
+| `programs` | Programmes or festivals the event belongs to. | VARCHAR | `L'Été du Canal ; Paris Plages` |
+| `address_url` | Link to an online event. | VARCHAR | `https://example.org/live` |
+| `address_url_text` | Extra information about the online event link. | VARCHAR | `Conférence en direct` |
+| `address_text` | Extra venue details (building, floor...). | VARCHAR | `Retransmis depuis l'Auditorium` |
+| `title_event` | Short event label. | VARCHAR | `Été du Canal` |
+| `audience` | Target audience. | VARCHAR | `Tout public / Jeune public` |
+| `childrens` | Suitable for children. | VARCHAR | `Oui, à partir de 6 ans / Non` |
+| `group` | Suitable for groups. | VARCHAR | `Oui, sur réservation / Non` |
+| `locale` | Main language of the event. | VARCHAR | `fr / en` |
+| `rank` | Ranking or popularity score. | DOUBLE | `932.5` |
+| `weight` | Undocumented weighting field. | INTEGER | `100` |
+| `qfap_tags` | Categories, separated by `;`. | VARCHAR | `Humour;Théâtre` |
+| `universe_tags` | Broader theme keywords. | VARCHAR | `Musique ; Loisirs` |
+| `event_indoor` | Indoor (1) or outdoor (0). | INTEGER | `0 / 1` |
+| `event_pets_allowed` | Pets allowed. | INTEGER | `1 / 0` |
+| `contact_organisation_name` | Contact organisation name. | VARCHAR | `Association des Canaux de Paris` |
+| `contact_url_text` | Text of the contact URL. | VARCHAR | `Visitez notre site` |
+| `contact_vimeo`, `contact_deezer`, `contact_tiktok`, `contact_twitch`, `contact_spotify`, `contact_youtube`, `contact_bandcamp`, `contact_linkedin`, `contact_snapchat`, `contact_whatsapp`, `contact_instagram`, `contact_messenger`, `contact_pinterest`, `contact_soundcloud` | Social and media links. | VARCHAR | `https://...` |
 
 </details>
 
+## Prerequisites
 
-## Prérequis
+- [uv](https://docs.astral.sh/uv/getting-started/installation/) (it installs Python 3.12 and `just` for you)
+- git
 
-- [Docker](https://docs.docker.com/get-started/introduction/get-docker-desktop/)
-- [UV](https://docs.astral.sh/uv/getting-started/installation/)
+No Docker, no credentials and no `.env` file are required.
 
 ## Installation
 
-1. Installer les dépendances du projet
 ```bash
-uv sync --frozen --all-groups
-```
-
-2. Installer le projet en mode `editable`
-```bash
+uv sync --locked --all-groups
 uv pip install -e .
+uv run just preflight
 ```
 
-> [!IMPORTANT]
-> Avant de lancer le projet, assurez-vous que :
-> - Le `docker daemon` est en cours d'exécution (Docker Desktop doit être lancé)
-> - Vous avez configuré les variables d'environnement nécessaires dans le fichier `.env` à la racine du projet comme suit :
->   ```bash
->   DBT_ENV_SECRET_MINIO_ACCESS_KEY="<YOUR_ACCESS_KEY>"
->   DBT_ENV_SECRET_MINIO_SECRET_KEY="<YOUR_SECRET_KEY>"
->   DBT_PROFILES_DIR="./src/transformation/dbt_paris_event_analyzer/profiles/"
->   DBT_PROJECT_DIR="./src/transformation/dbt_paris_event_analyzer/"
->   ```
->   Les identifiants sont à choisir librement avec les règles suivantes :
->  - `DBT_ENV_SECRET_MINIO_ACCESS_KEY` : au moins 3 caractères, correspond à votre nom d'utilisateur
->  - `DBT_ENV_SECRET_MINIO_SECRET_KEY` : au moins 8 caractères, correspond à votre mot de passe
->
+`just preflight` installs the git hooks and DuckDB extensions, then builds the warehouse on a small synthetic sample and runs all dbt tests. It ends with `PREFLIGHT OK`.
 
-3. Déployer les services nécessaires
-```bash
-uv run just comp-start
-```
+## Usage
 
-## Exécution du projet
+| Goal | Command |
+| :--- | :--- |
+| List all recipes | `uv run just` |
+| Offline build + all dbt tests (sample data) | `uv run just dbt-build-ci` |
+| dbt unit tests only | `uv run just dbt-unit` |
+| Lint SQL | `uv run just lint-sql` |
+| All quality hooks | `uv run just quality-all` |
+| App on the offline warehouse | `uv run just expose-ci` |
+| Full pipeline on today's real data (network) | `uv run just final-workflow` |
 
-```bash
-uv run just final-workflow
-```
+dbt targets (`src/transformation/dbt_paris_event_analyzer/profiles/profiles.yml`):
 
-# Auteur
+- `prod`: today's snapshot from `datalake/`, written by `just ingest`.
+- `ci`: the synthetic sample generated by `data/sample/generate_sample.py` (fictional events, dates relative to today).
+- `lint`: in-memory, used by SQLFluff templating only.
+
+## Author
 
 - [CAprogs](https://github.com/CAprogs)
