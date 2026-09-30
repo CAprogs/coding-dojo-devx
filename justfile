@@ -18,6 +18,7 @@ SAMPLE_GENERATOR := "data/sample/generate_sample.py"
 preflight:
     @echo "\n[1/4] Syncing dependencies from uv.lock ..\n"
     @uv sync --locked --all-groups
+    @uv pip install -e . --quiet
     @echo "\n[2/4] Installing git hooks and hook environments ..\n"
     @uv run pre-commit install --install-hooks
     @echo "\n[3/4] Installing DuckDB extensions ..\n"
