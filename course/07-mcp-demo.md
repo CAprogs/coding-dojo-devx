@@ -8,7 +8,7 @@ gets the fewest permissions possible, and it is read-only whenever you can manag
 ## Setup (before the session)
 
 - The organisation policy "MCP servers in Copilot" must be enabled for the facilitator's seat (it is disabled by default for Copilot Business and Enterprise).
-- A **fine-grained personal access token** limited to `CAprogs/coding-dojo-devx`, with read-only access to Contents, Pull requests and Actions.
+- A **fine-grained personal access token** limited to `CAprogs/coding-dojo-devx`, with read-only access to Contents and Pull requests.
 - The configuration below, copied from [examples/mcp.json](examples/mcp.json) to `.vscode/mcp.json` on the facilitator's machine only.
 
 ```json
@@ -30,7 +30,7 @@ gets the fewest permissions possible, and it is read-only whenever you can manag
 ```
 
 The `/readonly` endpoint exposes read tools only. The token adds a second limit: even a write tool would be refused.
-Signing in with OAuth instead would give the server your account's full rights.
+Signing in with OAuth instead would grant the scopes of the app across every repository your account can access.
 
 ## Script
 

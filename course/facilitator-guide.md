@@ -41,6 +41,9 @@ The last 8 minutes of the agenda are a floating buffer.
 - `just dbt-unit` builds the parents empty first; a model that fails to compile fails there, before the unit tests run.
 - The offline sample is regenerated with dates relative to today on every `just dbt-build-ci`. Do not commit `data/sample/*.parquet`.
 - Workflow runs from a learner's first pull request wait for approval unless their warm-up pull request was merged.
+  This relies on the repository setting "Require approval for first-time contributors".
+- CI runs `course/checks/` from the pull request itself, so a learner could edit the checks to pass. Look for changes
+  under `course/checks/` during review.
 
 ## Credits
 

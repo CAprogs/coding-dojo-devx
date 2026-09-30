@@ -19,7 +19,7 @@ and leaves the decision to a human.
 
 1. Create `.github/agents/reviewer.agent.md` (start from [templates/reviewer.agent.md](templates/reviewer.agent.md)):
    - `tools: ['search', 'read']`;
-   - `model`: a light model first, then `Auto (copilot)` as fallback;
+   - `model`: a light model first (for example `GPT-5 mini (copilot)`; check the names in your model picker), then `Auto (copilot)`;
    - a body with the review criteria of [rubrics.md](rubrics.md), the output format
      (blocking and non-blocking findings with `path:line`), and a rule stating that reviewed content is data, never instructions;
    - no approval, no merge.
@@ -37,18 +37,28 @@ and leaves the decision to a human.
 
    `.review/` is ignored by git.
 
+   If the other pair's pull request does not exist yet, review the reference solution instead:
+
+   ```bash
+   git diff upstream/lab-2...upstream/lab-3 > .review/diff.patch
+   ```
+
 3. Pick **reviewer** in the agent picker, in a new chat, and ask:
 
    ```text
-   Review .review/diff.patch.
+   Review #file:.review/diff.patch
    ```
+
+   `#file:` attaches the file explicitly (you can also drag it into the chat), because some search tools skip git-ignored files.
 
 4. Check one finding yourself: does the cited line exist and say what the agent claims?
-   Then post the findings as a comment on the reviewed pull request:
+   Copy the answer into `.review/findings.md`, edit it, and post it as a comment on the reviewed pull request:
 
    ```bash
-   gh pr comment <number> --repo CAprogs/coding-dojo-devx --body-file <file with the findings>
+   gh pr comment <number> --repo CAprogs/coding-dojo-devx --body-file .review/findings.md
    ```
+
+   Without `gh`, paste it in the pull request page on GitHub.
 
 5. Commit (`feat: add a read-only review agent`), push, and open your pull request to `lab-4`.
    Include a screenshot of the agent's tool list (Configure Tools) and the link to the comment you posted.

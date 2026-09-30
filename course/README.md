@@ -64,8 +64,8 @@ The files in `course/backlog/` are the source of truth for the stories.
 - You work in **pairs** but each person has their **own fork**. Roles alternate:
   person A drives Labs 1 and 3, person B drives Labs 2 and 4. The driver types; the navigator reads,
   challenges the agent's plan and checks the evidence.
-- Each lab has its own upstream branch, `lab-1` to `lab-4`. It contains the reference solution of
-  the previous lab, so you can always start fresh even if the previous lab did not go well.
+- Each lab has its own upstream branch, `lab-1` to `lab-4`. `lab-1` is `main`; each later branch contains the reference
+  solution of the previous lab, so you can always start fresh even if the previous lab did not go well.
 - Each pair opens **one pull request per lab**, from the driver's fork to the upstream `lab-N` branch.
   Pull requests are reviewed by a human. They are never merged into `main`.
 
@@ -80,8 +80,11 @@ Open the pull request:
 
 ```bash
 git push -u origin lab-2-<your-handle>
-gh pr create --repo CAprogs/coding-dojo-devx --base lab-2 --fill
+gh pr create --repo CAprogs/coding-dojo-devx --base lab-2 --head <you>:lab-2-<your-handle> --web
 ```
+
+`--web` opens the pull request form in the browser with the template, so you can fill the evidence and attach screenshots.
+Without `gh`, use the "Compare & pull request" button on your fork and pick `CAprogs/coding-dojo-devx` / `lab-2` as the base.
 
 Add your navigator as co-author in the last commit message:
 

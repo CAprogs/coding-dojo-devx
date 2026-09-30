@@ -29,7 +29,7 @@ Turn the Lab 2 procedure into a reusable **skill**, then let a lighter model fol
    Implement course/backlog/DN-3.md test-first.
    ```
 
-   Do not name the skill. Check under **References** whether it was picked up. If not, improve its description, or call it with `/dbt-unit-test`.
+   Do not name the skill. Check under **References** (or the tool calls) whether it was loaded. If not, improve its description, or call it with `/dbt-unit-test`.
 
    Hint for your review: the fix belongs where `has_event_today` is derived for events without occurrences.
    `agenda_enriched` joins `filtered_rows` with `agenda`, so its unit test needs **two** `given` inputs.
@@ -41,8 +41,10 @@ Turn the Lab 2 procedure into a reusable **skill**, then let a lighter model fol
 
 ## You are done when
 
+- The skill exists and the agent used it (References) to write a DN-3 unit test that **fails** before the fix.
 - CI `lab-checks` passes: the skill's `name` matches its folder, its description is specific, and at least two unit tests exist.
-- The informational `acceptance` job, which checks DN-2 and DN-3 on the offline sample, passes.
+
+**Stretch:** the fix is green, and the informational `acceptance` job, which checks DN-2 and DN-3 on the offline sample, passes.
 
 ## Short on time?
 

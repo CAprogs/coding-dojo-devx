@@ -40,14 +40,20 @@ approve `uv run just dbt-unit-anything`. The anchored form `/^...$/` approves ex
 Discuss with your navigator: approving `just dbt-unit` approves **whatever the `dbt-unit` recipe runs**, and dbt runs
 whatever SQL the models contain. The allowlist is only as safe as the `justfile` and the models.
 
-Recommended in your **user** settings (it is ignored in workspace settings): keep edits to the harness under manual approval.
+Recommended in your **user** settings (it is ignored in workspace settings): keep edits to the files your allowlisted
+commands execute under manual approval. The last matching pattern wins, so `"**/*": true` comes first.
+If you already have this setting, add the lines instead of replacing it.
 
 ```jsonc
 "chat.tools.edits.autoApprove": {
+  "**/*": true,
   "**/justfile": false,
   "**/.pre-commit-config.yaml": false,
   "**/.github/workflows/**": false,
-  "**/profiles.yml": false
+  "**/profiles.yml": false,
+  "**/data/sample/*.py": false,
+  "**/pyproject.toml": false,
+  "**/uv.lock": false
 }
 ```
 
@@ -57,14 +63,14 @@ Ask the agent, in a new chat:
 
 ```text
 Read course/backlog/DN-2.md. Do not change any model yet. Write a dbt unit test for up_to_date_events
-in models/silver/_silver__unit_tests.yml that encodes the acceptance criteria, then run uv run just dbt-unit
+in src/transformation/dbt_paris_event_analyzer/models/silver/_silver__unit_tests.yml that encodes the acceptance criteria, then run uv run just dbt-unit
 and show me that it fails.
 ```
 
 Check the test yourself before going on:
 
-- `given: ref('agenda_enriched')` rows with `is_outdated: false` (otherwise the model's `WHERE` clause drops them);
-- at least a case with a postal code and no street, and a complete address;
+- the rows given for `ref('agenda_enriched')` set `is_outdated: false` (otherwise the model's `WHERE` clause drops them);
+- at least one case with a postal code and no street, and a complete address;
 - optional teaching case: a venue name only (no street, no postal code).
   A naive fix with `concat_ws` returns `''` here, not NULL.
 - `expect` rows with `full_address`, `latitude` and `longitude`.

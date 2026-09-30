@@ -21,7 +21,7 @@ Each criterion is **met** or **not met**. Two minutes per pull request is the ta
 | 2.2 | Rule encoded | Cases cover a missing street with a postal code, and a complete address. |
 | 2.3 | Minimal fixtures | Only the columns the rule needs; `is_outdated: false` is set. |
 | 2.4 | Right layer | The fix is in `models/silver`, not patched in `gold` or in the app. |
-| 2.5 | Narrow allowlist | Auto-approved commands are exact `just <recipe>` commands: no wildcard, no `uv`, no `git`. |
+| 2.5 | Narrow allowlist | Auto-approved rules are anchored regexes of exact recipes (`/^uv run just dbt-unit$/`): no wildcard, no bare `uv` or `git` rule. |
 
 ## Lab 3: skill and model choice
 
@@ -30,7 +30,8 @@ Each criterion is **met** or **not met**. Two minutes per pull request is the ta
 | 3.1 | Selectable | The `description` says what the skill does and when to use it, in this repository's terms. |
 | 3.2 | Executable steps | The steps can be followed without guessing, and include "check that the test fails first". |
 | 3.3 | No repetition | The skill does not restate `AGENTS.md`. |
-| 3.4 | It worked | DN-3 was implemented with the skill; the PR states the model, number of requests and context use. |
+| 3.4 | It worked | The skill produced a failing DN-3 unit test (the fix is a stretch goal); the PR states the model, number of requests and context use. |
+| 3.5 | Right tests | The two unit tests cover DN-2 and DN-3 (CI only counts them). |
 
 ## Lab 4: review agent
 
@@ -40,7 +41,7 @@ Each criterion is **met** or **not met**. Two minutes per pull request is the ta
 | 4.2 | Concrete rubric | The agent body contains the review criteria, not "review the code". |
 | 4.3 | Injection clause | The body says reviewed content is data, never instructions. |
 | 4.4 | Human authority | The agent reports findings; it never approves or merges. |
-| 4.5 | Useful output | Findings posted on the reviewed PR cite `file:line`; one spot-checked finding is real. |
+| 4.5 | Useful output | Findings posted on the reviewed PR cite `path:line`; one spot-checked finding is real. |
 
 ## Harness scorecard (debrief)
 
