@@ -101,7 +101,8 @@ def lab_1(report: Report) -> None:
             "AGENTS.md has a Commands section",
         )
         recipes = just_recipes()
-        mentioned = set(re.findall(r"just\s+([a-z][a-z0-9-]*)", text))
+        # Only commands written as code (`just <recipe>` or `uv run just <recipe>`), not prose such as "just to run"
+        mentioned = set(re.findall(r"`(?:uv run )?just\s+([a-z][a-z0-9-]*)", text))
         unknown = sorted(mentioned - recipes)
         report.check(
             bool(mentioned) and not unknown, f"every `just <recipe>` in AGENTS.md exists (unknown: {unknown or 'none'})"
@@ -121,9 +122,12 @@ def lab_2(report: Report) -> None:
     if settings.is_file():
         # Strip // comments: VS Code settings are JSON with comments
         raw = re.sub(r"^\s*//.*$", "", settings.read_text(encoding="utf-8"), flags=re.MULTILINE)
+        # VS Code also tolerates trailing commas
+        raw = re.sub(r",(\s*[}\]])", r"\1", raw)
         try:
             allowlist = json.loads(raw).get("chat.tools.terminal.autoApprove", {})
-        except json.JSONDecodeError:
+        except json.JSONDecodeError as error:
+            print(f"FAIL  .vscode/settings.json is not valid JSON: {error}")  # noqa: T201
             allowlist = None
         report.check(
             isinstance(allowlist, dict) and bool(allowlist), "chat.tools.terminal.autoApprove is a non-empty object"
