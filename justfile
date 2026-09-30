@@ -4,118 +4,109 @@ default:
 
 set dotenv-load
 
-STACK_NAME := "paris-event-analyzer"
-DATABASE_PATH := "warehouse/prod.duckdb"
+export DBT_PROJECT_DIR := "src/transformation/dbt_paris_event_analyzer/"
+export DBT_PROFILES_DIR := "src/transformation/dbt_paris_event_analyzer/profiles/"
+
+PROD_DATABASE := "warehouse/prod.duckdb"
+CI_DATABASE := "warehouse/ci.duckdb"
 INGESTION_ENTRYPOINT := "src/ingestion/main.py"
 WEB_APP_ENTRYPOINT := "app.py"
+SAMPLE_GENERATOR := "data/sample/generate_sample.py"
 
-# Docker
+# Check that this machine can run the whole offline workflow
+[group("setup")]
+preflight:
+    @echo "\n[1/4] Syncing dependencies from uv.lock ..\n"
+    @uv sync --locked --all-groups
+    @echo "\n[2/4] Installing git hooks and hook environments ..\n"
+    @uv run pre-commit install --install-hooks
+    @echo "\n[3/4] Installing DuckDB extensions ..\n"
+    @uv run python -c "import duckdb; duckdb.sql('INSTALL parquet; INSTALL spatial;')"
+    @echo "\n[4/4] Building the offline warehouse and running all dbt tests ..\n"
+    @just dbt-build-ci
+    @echo "\nPREFLIGHT OK\n"
 
-# Check the docker compose file consistency
-[group("docker")]
-comp-check:
-    @echo "\nChecking docker-compose consistency ..\n"
-    @docker compose config --no-interpolate
-
-# Start the docker compose stack
-[group("docker")]
-comp-start: comp-check
-    @echo "\nCreating the datalake directory if it does not exist .."
-    @mkdir -p datalake/
-    @sleep 2
-    @echo "\nStarting {{STACK_NAME}} stack..\n"
-    @docker compose up -d
-
-# Restart the docker compose stack
-[group("docker")]
-comp-restart:
-    @echo "\nRestarting {{STACK_NAME}} stack ..\n"
-    @docker compose restart {{STACK_NAME}}
-
-# Stop the docker compose stack and remove containers
-[group("docker")]
-comp-clean:
-    @echo "\nStopping {{STACK_NAME}} stack ..\n"
-    @docker compose down
-
-# Show all docker compose stack
-[group("docker")]
-comp-show:
-    @echo "\nShowing docker-compose stack ..\n"
-    @docker compose ps -a
-
-# Pre-commit
-
-# Run pre-commit checks and update hooks if possible
 [group("test")]
 quality:
 	@echo "Checking pre-commit config consistency"
 	@uv run pre-commit validate-config
 	@echo "\nInstalling pre-commit hooks\n"
 	@uv run pre-commit install --install-hooks
-	@echo "\nChecking for hook updates\n"
-	@uv run pre-commit autoupdate
 
-# Run pre-commit checks and hooks on modified files only
 [group("test")]
 quality-default: quality
 	@echo "\nRunning pre-commit on staged files\n"
 	@uv run pre-commit run
 
-# Run pre-commit checks and hooks on a all project files
 [group("test")]
 quality-all: quality
 	@echo "\nRunning pre-commit on all files\n"
 	@uv run pre-commit run --all-files
 
-# DBT
+# Lint all dbt SQL models with SQLFluff (no database needed)
+[group("test")]
+lint-sql:
+    @uv run pre-commit run sqlfluff-lint --all-files
 
-# Debug the dbt project configuration
+# Regenerate the synthetic offline sample (dates relative to today)
+[group("dbt")]
+sample:
+    @uv run python {{SAMPLE_GENERATOR}}
+
+# Build every model on the offline sample and run unit + data tests
+[group("dbt")]
+dbt-build-ci: sample
+    @uv run dbt build --target ci
+
+# Run dbt unit tests only (parents are built empty first)
+[group("dbt")]
+dbt-unit: sample
+    @uv run dbt run --target ci --empty --quiet
+    @uv run dbt test --target ci --select "test_type:unit"
+
 [group("dbt")]
 dbt-debug:
     @echo "\nDebugging profile config .."
     @uv run dbt debug --config-dir
     @uv run dbt debug
 
-# Build and serve the dbt documentation
 [group("dbt")]
 dbt-catalog: dbt-debug
     @echo "\nBuilding catalog .."
-    @dbt docs generate
+    @uv run dbt docs generate
     @echo "\nOpening DBT documentation .."
-    @dbt docs serve --port 3000
+    @uv run dbt docs serve --port 3000
 
-# Run the dbt project
+# Build the models on today's real snapshot (run `just ingest` first)
 [group("dbt")]
 dbt-run: dbt-debug
     @echo "\nRunning dbt models .."
     @uv run dbt run
 
-# Clean the dbt project by removing compiled file, artifacts and logs
 [group("dbt")]
-dbt-clean: dbt-debug
+dbt-clean:
     @echo "\nCleaning dbt project .."
     @uv run dbt clean --no-clean-project-files-only
 
-# Start the DuckDB UI after running dbt models
+# Open the DuckDB UI on the real warehouse (needs the DuckDB CLI)
 [group("dbt")]
 duckdb-ui: dbt-run
     @echo "\nStarting DuckDB UI .."
-    @duckdb -ui {{DATABASE_PATH}}
+    @duckdb -ui {{PROD_DATABASE}}
 
-
-# Final Workflow
-
-# Run the ingestion workflow
+# Download today's events from Paris Open Data into datalake/
 [group("workflow")]
 ingest:
 		@uv run python {{INGESTION_ENTRYPOINT}}
 
-# Run the exposition workflow
 [group("workflow")]
 expose:
-		@uv run streamlit run {{WEB_APP_ENTRYPOINT}}
+		@WAREHOUSE_PATH={{PROD_DATABASE}} uv run streamlit run {{WEB_APP_ENTRYPOINT}}
 
-# Run the entire workflow process, from ingestion to exposition
+# Start the app on the offline warehouse
+[group("workflow")]
+expose-ci: dbt-build-ci
+		@WAREHOUSE_PATH={{CI_DATABASE}} uv run streamlit run {{WEB_APP_ENTRYPOINT}}
+
 [group("workflow")]
 final-workflow: ingest dbt-run expose
