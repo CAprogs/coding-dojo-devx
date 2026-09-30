@@ -1,0 +1,9 @@
+{
+  // Auto-approve only these exact commands. A plain string key would match any command that starts
+  // with it, so each rule is an anchored regular expression. Everything else still asks for approval.
+  "chat.tools.terminal.autoApprove": {
+    "/^uv run just dbt-unit$/": true,
+    "/^uv run just dbt-build-ci$/": true,
+    "/^uv run just lint-sql$/": true
+  }
+}

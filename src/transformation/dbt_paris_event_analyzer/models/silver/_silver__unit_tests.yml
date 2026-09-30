@@ -1,0 +1,17 @@
+unit_tests:
+  - name: dn2_full_address_is_null_when_street_or_zipcode_is_missing
+    description: "DN-2: never show a blank-padded or meaningless address, and hide the map pin with it."
+    model: up_to_date_events
+    given:
+      - input: ref('agenda_enriched')
+        rows:
+          - {id: complete, is_outdated: false, address_is_indicated: true, address_name: Venue, address_street: 1 rue A, address_zipcode: "75011", lat: 48.8, lon: 2.3}
+          - {id: zipcode_only, is_outdated: false, address_is_indicated: true, address_name: null, address_street: null, address_zipcode: "75010", lat: 48.8, lon: 2.3}
+          - {id: blank_street, is_outdated: false, address_is_indicated: true, address_name: Venue, address_street: " ", address_zipcode: "75012", lat: 48.8, lon: 2.3}
+          - {id: name_only, is_outdated: false, address_is_indicated: true, address_name: Venue, address_street: null, address_zipcode: null, lat: 48.8, lon: 2.3}
+    expect:
+      rows:
+        - {id: complete, full_address: 1 rue A 75011, latitude: 48.8, longitude: 2.3}
+        - {id: zipcode_only, full_address: null, latitude: null, longitude: null}
+        - {id: blank_street, full_address: null, latitude: null, longitude: null}
+        - {id: name_only, full_address: null, latitude: null, longitude: null}
